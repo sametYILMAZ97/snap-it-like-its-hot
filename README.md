@@ -1,4 +1,4 @@
-# yoink-the-screen
+# snap-it-like-its-hot
 
 A powerful, Vivaldi-inspired screenshot extension for Google Chrome and Chromium-based browsers.
 

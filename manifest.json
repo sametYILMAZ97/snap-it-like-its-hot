@@ -1,6 +1,6 @@
 {
   "manifest_version": 3,
-  "name": "yoink-the-screen",
+  "name": "snap-it-like-its-hot",
   "version": "2.0",
   "description": "Capture element or full-page screenshots via scroll+stitch, copy to clipboard, and download.",
   "permissions": [
@@ -12,7 +12,7 @@
   ],
   "host_permissions": ["<all_urls>"],
   "action": {
-    "default_title": "yoink-the-screen",
+    "default_title": "snap-it-like-its-hot",
     "default_popup": "popup.html"
   },
   "background": {
