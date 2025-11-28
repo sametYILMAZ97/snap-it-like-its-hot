@@ -1,12 +1,18 @@
 {
   "manifest_version": 3,
-  "name": "Smart Screenshot",
+  "name": "yoink-the-screen",
   "version": "2.0",
   "description": "Capture element or full-page screenshots via scroll+stitch, copy to clipboard, and download.",
-  "permissions": ["activeTab", "tabs", "clipboardWrite", "scripting", "downloads"],
+  "permissions": [
+    "activeTab",
+    "tabs",
+    "clipboardWrite",
+    "scripting",
+    "downloads"
+  ],
   "host_permissions": ["<all_urls>"],
   "action": {
-    "default_title": "Smart Screenshot",
+    "default_title": "yoink-the-screen",
     "default_popup": "popup.html"
   },
   "background": {

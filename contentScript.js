@@ -1,6 +1,6 @@
 // contentScript.js
 
-(function() {
+(function () {
   if (window.hasSmartScreenshotLoaded) return;
   window.hasSmartScreenshotLoaded = true;
 
@@ -17,15 +17,15 @@
   let elementInfoBox = null;
 
   // ---------- Styles ----------
-  
+
   const THEME = {
-    bg: '#2b2b2b',
-    surface: '#3c3c3c',
-    text: '#ffffff',
-    primary: '#4A90E2',
-    success: '#66BB6A',
-    danger: '#EF5350',
-    shadow: '0 8px 24px rgba(0,0,0,0.4)'
+    bg: "#2b2b2b",
+    surface: "#3c3c3c",
+    text: "#ffffff",
+    primary: "#4A90E2",
+    success: "#66BB6A",
+    danger: "#EF5350",
+    shadow: "0 8px 24px rgba(0,0,0,0.4)",
   };
 
   // ---------- AREA PICKER State ----------
@@ -38,8 +38,8 @@
   let isDragging = false;
 
   const Z_INDEX_BASE = 2147483640;
-  const UI_ATTR_NAME = 'data-smart-screenshot-ui';
-  const UI_ATTR_VALUE = '1';
+  const UI_ATTR_NAME = "data-smart-screenshot-ui";
+  const UI_ATTR_VALUE = "1";
 
   // ---------- Utils ----------
 
@@ -53,13 +53,15 @@
   }
 
   function waitForFrame() {
-    return new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+    return new Promise((resolve) =>
+      requestAnimationFrame(() => requestAnimationFrame(resolve))
+    );
   }
 
   function ensureStyles() {
-    if (document.getElementById('smart-screenshot-styles')) return;
-    const style = document.createElement('style');
-    style.id = 'smart-screenshot-styles';
+    if (document.getElementById("smart-screenshot-styles")) return;
+    const style = document.createElement("style");
+    style.id = "smart-screenshot-styles";
     style.textContent = `
       @keyframes smartScreenshotSpin { to { transform: rotate(360deg); } }
       @keyframes smartScreenshotTimer { from { width: 100%; } to { width: 0%; } }
@@ -69,31 +71,31 @@
 
   // ---------- Toast Notification System ----------
 
-  function showToast(message, type = 'info') {
-    const toast = document.createElement('div');
+  function showToast(message, type = "info") {
+    const toast = document.createElement("div");
     markAsUi(toast);
-    
+
     // Styles
     Object.assign(toast.style, {
-      position: 'fixed',
-      bottom: '30px',
-      left: '50%',
-      transform: 'translateX(-50%) translateY(20px)',
-      background: type === 'error' ? THEME.danger : THEME.surface,
-      color: '#fff',
-      padding: '12px 24px',
-      borderRadius: '50px',
-      fontFamily: 'system-ui, sans-serif',
-      fontSize: '14px',
-      fontWeight: '500',
+      position: "fixed",
+      bottom: "30px",
+      left: "50%",
+      transform: "translateX(-50%) translateY(20px)",
+      background: type === "error" ? THEME.danger : THEME.surface,
+      color: "#fff",
+      padding: "12px 24px",
+      borderRadius: "50px",
+      fontFamily: "system-ui, sans-serif",
+      fontSize: "14px",
+      fontWeight: "500",
       boxShadow: THEME.shadow,
       zIndex: String(Z_INDEX_BASE + 10),
-      opacity: '0',
-      transition: 'all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275)',
-      pointerEvents: 'none',
-      display: 'flex',
-      alignItems: 'center',
-      gap: '8px'
+      opacity: "0",
+      transition: "all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275)",
+      pointerEvents: "none",
+      display: "flex",
+      alignItems: "center",
+      gap: "8px",
     });
 
     toast.innerHTML = `<span>${message}</span>`;
@@ -101,14 +103,14 @@
 
     // Animate In
     requestAnimationFrame(() => {
-      toast.style.opacity = '1';
-      toast.style.transform = 'translateX(-50%) translateY(0)';
+      toast.style.opacity = "1";
+      toast.style.transform = "translateX(-50%) translateY(0)";
     });
 
     // Animate Out & Remove
     setTimeout(() => {
-      toast.style.opacity = '0';
-      toast.style.transform = 'translateX(-50%) translateY(10px)';
+      toast.style.opacity = "0";
+      toast.style.transform = "translateX(-50%) translateY(10px)";
       setTimeout(() => toast.remove(), 300);
     }, 3000);
   }
@@ -119,8 +121,9 @@
 
   function hideScrollbars() {
     if (scrollBarStyleElement) return;
-    scrollBarStyleElement = document.createElement('style');
-    scrollBarStyleElement.innerHTML = 'body::-webkit-scrollbar { display: none; } body { -ms-overflow-style: none; scrollbar-width: none; }';
+    scrollBarStyleElement = document.createElement("style");
+    scrollBarStyleElement.innerHTML =
+      "body::-webkit-scrollbar { display: none; } body { -ms-overflow-style: none; scrollbar-width: none; }";
     document.head.appendChild(scrollBarStyleElement);
   }
 
@@ -132,25 +135,27 @@
   }
 
   function getUiElements() {
-    return Array.from(document.querySelectorAll(`[${UI_ATTR_NAME}="${UI_ATTR_VALUE}"]`));
+    return Array.from(
+      document.querySelectorAll(`[${UI_ATTR_NAME}="${UI_ATTR_VALUE}"]`)
+    );
   }
 
   function hideUi(uiElements) {
-    uiElements.forEach(el => {
+    uiElements.forEach((el) => {
       if (!el._prevDisplay) {
-        el._prevDisplay = el.style.display || '';
+        el._prevDisplay = el.style.display || "";
       }
-      el.style.display = 'none';
+      el.style.display = "none";
     });
   }
 
   function showUi(uiElements) {
-    uiElements.forEach(el => {
+    uiElements.forEach((el) => {
       if (el._prevDisplay !== undefined) {
         el.style.display = el._prevDisplay;
         delete el._prevDisplay;
       } else {
-        el.style.display = '';
+        el.style.display = "";
       }
     });
   }
@@ -173,14 +178,14 @@
     return new Promise((resolve, reject) => {
       try {
         chrome.runtime.sendMessage(
-          { type: 'CAPTURE_VISIBLE_TAB' },
+          { type: "CAPTURE_VISIBLE_TAB" },
           (response) => {
             if (chrome.runtime.lastError) {
               reject(chrome.runtime.lastError);
               return;
             }
             if (!response || !response.ok || !response.dataUrl) {
-              reject(new Error(response?.error || 'captureVisibleTab failed'));
+              reject(new Error(response?.error || "captureVisibleTab failed"));
               return;
             }
             resolve(response.dataUrl);
@@ -196,41 +201,41 @@
 
   function showInfoOverlay(text) {
     if (infoOverlay) {
-       if(text) infoOverlay.querySelector('span').textContent = text;
-       return;
+      if (text) infoOverlay.querySelector("span").textContent = text;
+      return;
     }
 
-    infoOverlay = document.createElement('div');
+    infoOverlay = document.createElement("div");
     markAsUi(infoOverlay);
-    
+
     Object.assign(infoOverlay.style, {
-      position: 'fixed',
-      top: '20px',
-      left: '50%',
-      transform: 'translateX(-50%)',
-      padding: '8px 16px',
-      background: 'rgba(0, 0, 0, 0.7)',
-      backdropFilter: 'blur(4px)',
-      color: '#fff',
-      fontFamily: 'system-ui, sans-serif',
-      fontSize: '13px',
-      borderRadius: '20px',
+      position: "fixed",
+      top: "20px",
+      left: "50%",
+      transform: "translateX(-50%)",
+      padding: "8px 16px",
+      background: "rgba(0, 0, 0, 0.7)",
+      backdropFilter: "blur(4px)",
+      color: "#fff",
+      fontFamily: "system-ui, sans-serif",
+      fontSize: "13px",
+      borderRadius: "20px",
       zIndex: String(Z_INDEX_BASE + 1),
-      pointerEvents: 'none',
-      transition: 'opacity 0.2s'
+      pointerEvents: "none",
+      transition: "opacity 0.2s",
     });
-    
-    const msg = text || 'Smart Screenshot active. Press Esc to cancel.';
+
+    const msg = text || "Smart Screenshot active. Press Esc to cancel.";
     infoOverlay.innerHTML = `<span>${msg}</span>`;
     document.body.appendChild(infoOverlay);
   }
 
   function hideInfoOverlay() {
     if (infoOverlay) {
-      infoOverlay.style.opacity = '0';
+      infoOverlay.style.opacity = "0";
       setTimeout(() => {
-          if(infoOverlay) infoOverlay.remove();
-          infoOverlay = null;
+        if (infoOverlay) infoOverlay.remove();
+        infoOverlay = null;
       }, 200);
     }
   }
@@ -238,66 +243,66 @@
   function showLoadingOverlay(text) {
     ensureStyles();
     if (loadingOverlay) {
-      const span = loadingOverlay.querySelector('span');
+      const span = loadingOverlay.querySelector("span");
       if (span) span.textContent = text;
       return;
     }
 
-    loadingOverlay = document.createElement('div');
+    loadingOverlay = document.createElement("div");
     markAsUi(loadingOverlay);
-    
+
     Object.assign(loadingOverlay.style, {
-      position: 'fixed',
-      inset: '0',
-      background: 'rgba(0, 0, 0, 0.4)',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
+      position: "fixed",
+      inset: "0",
+      background: "rgba(0, 0, 0, 0.4)",
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center",
       zIndex: String(Z_INDEX_BASE + 2),
-      pointerEvents: 'none',
-      opacity: '0',
-      transition: 'opacity 0.2s'
+      pointerEvents: "none",
+      opacity: "0",
+      transition: "opacity 0.2s",
     });
 
-    const box = document.createElement('div');
+    const box = document.createElement("div");
     Object.assign(box.style, {
-      background: '#222',
-      color: '#fff',
-      padding: '12px 20px',
-      borderRadius: '8px',
-      fontFamily: 'system-ui, sans-serif',
-      fontSize: '14px',
-      boxShadow: '0 4px 12px rgba(0,0,0,0.3)',
-      display: 'flex',
-      alignItems: 'center',
-      gap: '10px'
+      background: "#222",
+      color: "#fff",
+      padding: "12px 20px",
+      borderRadius: "8px",
+      fontFamily: "system-ui, sans-serif",
+      fontSize: "14px",
+      boxShadow: "0 4px 12px rgba(0,0,0,0.3)",
+      display: "flex",
+      alignItems: "center",
+      gap: "10px",
     });
 
     // Simple CSS Spinner
-    const spinner = document.createElement('div');
-    spinner.style.width = '16px';
-    spinner.style.height = '16px';
-    spinner.style.border = '2px solid #555';
-    spinner.style.borderTopColor = '#fff';
-    spinner.style.borderRadius = '50%';
-    spinner.style.animation = 'smartScreenshotSpin 1s linear infinite';
-    
-    const span = document.createElement('span');
+    const spinner = document.createElement("div");
+    spinner.style.width = "16px";
+    spinner.style.height = "16px";
+    spinner.style.border = "2px solid #555";
+    spinner.style.borderTopColor = "#fff";
+    spinner.style.borderRadius = "50%";
+    spinner.style.animation = "smartScreenshotSpin 1s linear infinite";
+
+    const span = document.createElement("span");
     span.textContent = text;
 
     box.appendChild(spinner);
     box.appendChild(span);
     loadingOverlay.appendChild(box);
     document.body.appendChild(loadingOverlay);
-    
-    requestAnimationFrame(() => loadingOverlay.style.opacity = '1');
+
+    requestAnimationFrame(() => (loadingOverlay.style.opacity = "1"));
   }
 
   function hideLoadingOverlay() {
     if (loadingOverlay) {
-      loadingOverlay.style.opacity = '0';
+      loadingOverlay.style.opacity = "0";
       setTimeout(() => {
-        if(loadingOverlay) loadingOverlay.remove();
+        if (loadingOverlay) loadingOverlay.remove();
         loadingOverlay = null;
       }, 200);
     }
@@ -307,18 +312,18 @@
 
   function removeToolbarUi() {
     if (toolbar) {
-      toolbar.style.opacity = '0';
-      toolbar.style.transform = 'translate(-50%, 10px)';
+      toolbar.style.opacity = "0";
+      toolbar.style.transform = "translate(-50%, 10px)";
       setTimeout(() => {
-          if(toolbar) toolbar.remove();
-          toolbar = null;
+        if (toolbar) toolbar.remove();
+        toolbar = null;
       }, 200);
     }
   }
 
   function closeSession() {
-      removeToolbarUi();
-      currentDataUrl = null;
+    removeToolbarUi();
+    currentDataUrl = null;
   }
 
   async function copyDataUrlToClipboard(dataUrl) {
@@ -326,7 +331,7 @@
     try {
       const res = await fetch(dataUrl);
       const blob = await res.blob();
-      const item = new ClipboardItem({ 'image/png': blob });
+      const item = new ClipboardItem({ "image/png": blob });
       await navigator.clipboard.write([item]);
       return true;
     } catch (err) {
@@ -335,86 +340,95 @@
     }
   }
 
-  function createBtn(text, iconSvg, onClick, variant = 'secondary') {
-      const btn = document.createElement('button');
-      
-      const bg = variant === 'primary' ? THEME.primary : 
-                 variant === 'success' ? THEME.success : '#444';
-      
-      Object.assign(btn.style, {
-          background: bg,
-          color: '#fff',
-          border: 'none',
-          padding: '8px 14px',
-          borderRadius: '6px',
-          cursor: 'pointer',
-          display: 'flex',
-          alignItems: 'center',
-          gap: '6px',
-          fontSize: '13px',
-          fontWeight: '500',
-          fontFamily: 'system-ui, sans-serif',
-          transition: 'transform 0.1s, opacity 0.2s',
-          position: 'relative',
-          zIndex: '2' // above timer bar
-      });
-      
-      btn.onmouseover = () => btn.style.opacity = '0.9';
-      btn.onmouseout = () => btn.style.opacity = '1';
-      btn.onmousedown = () => btn.style.transform = 'scale(0.96)';
-      btn.onmouseup = () => btn.style.transform = 'scale(1)';
+  function createBtn(text, iconSvg, onClick, variant = "secondary") {
+    const btn = document.createElement("button");
 
-      if (iconSvg) {
-          const icon = document.createElement('div');
-          icon.innerHTML = iconSvg;
-          Object.assign(icon.style, { width: '16px', height: '16px', fill: 'currentColor', display: 'flex' });
-          btn.appendChild(icon);
-      }
-      
-      if (text) {
-        const span = document.createElement('span');
-        span.textContent = text;
-        btn.appendChild(span);
-      }
-      
-      btn.onclick = onClick;
-      return btn;
+    const bg =
+      variant === "primary"
+        ? THEME.primary
+        : variant === "success"
+        ? THEME.success
+        : "#444";
+
+    Object.assign(btn.style, {
+      background: bg,
+      color: "#fff",
+      border: "none",
+      padding: "8px 14px",
+      borderRadius: "6px",
+      cursor: "pointer",
+      display: "flex",
+      alignItems: "center",
+      gap: "6px",
+      fontSize: "13px",
+      fontWeight: "500",
+      fontFamily: "system-ui, sans-serif",
+      transition: "transform 0.1s, opacity 0.2s",
+      position: "relative",
+      zIndex: "2", // above timer bar
+    });
+
+    btn.onmouseover = () => (btn.style.opacity = "0.9");
+    btn.onmouseout = () => (btn.style.opacity = "1");
+    btn.onmousedown = () => (btn.style.transform = "scale(0.96)");
+    btn.onmouseup = () => (btn.style.transform = "scale(1)");
+
+    if (iconSvg) {
+      const icon = document.createElement("div");
+      icon.innerHTML = iconSvg;
+      Object.assign(icon.style, {
+        width: "16px",
+        height: "16px",
+        fill: "currentColor",
+        display: "flex",
+      });
+      btn.appendChild(icon);
+    }
+
+    if (text) {
+      const span = document.createElement("span");
+      span.textContent = text;
+      btn.appendChild(span);
+    }
+
+    btn.onclick = onClick;
+    return btn;
   }
 
   function showToolbar(contextLabel) {
     ensureStyles();
-    if(toolbar) toolbar.remove(); 
+    if (toolbar) toolbar.remove();
 
-    toolbar = document.createElement('div');
+    toolbar = document.createElement("div");
     markAsUi(toolbar);
 
     Object.assign(toolbar.style, {
-      position: 'fixed',
-      top: '20px',
-      left: '50%',
-      transform: 'translate(-50%, -20px)',
+      position: "fixed",
+      top: "20px",
+      left: "50%",
+      transform: "translate(-50%, -20px)",
       zIndex: String(Z_INDEX_BASE + 3),
       background: THEME.surface,
-      padding: '12px',
-      borderRadius: '12px',
-      display: 'flex',
-      alignItems: 'center',
-      gap: '10px',
+      padding: "12px",
+      borderRadius: "12px",
+      display: "flex",
+      alignItems: "center",
+      gap: "10px",
       boxShadow: THEME.shadow,
-      opacity: '0',
-      overflow: 'hidden', // Clip progress bar
-      transition: 'all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1)'
+      opacity: "0",
+      overflow: "hidden", // Clip progress bar
+      transition: "all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1)",
     });
 
     // Label (Preview thumbnail?)
-    const preview = document.createElement('div');
+    const preview = document.createElement("div");
     Object.assign(preview.style, {
-        width: '40px',
-        height: '40px',
-        background: `url(${currentDataUrl}) center/cover no-repeat`,
-        borderRadius: '6px',
-        border: '1px solid #555',
-        flexShrink: '0'
+      width: "40px",
+      height: "40px",
+      background: `url(${currentDataUrl}) center/cover no-repeat`,
+      borderRadius: "6px",
+      border: "1px solid #555",
+      flexShrink: "0",
     });
     toolbar.appendChild(preview);
 
@@ -424,109 +438,130 @@
     const closeIcon = `<svg viewBox="0 0 24 24"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>`;
 
     // Copy Button
-    const copyBtn = createBtn('Copy', copyIcon, async () => {
-      if (!navigator.clipboard) {
-         showToast('Clipboard not supported on this page (try HTTPS)', 'error');
-         return;
-      }
-      const originalText = copyBtn.querySelector('span').textContent;
-      copyBtn.querySelector('span').textContent = 'Copying...';
-      
-      const ok = await copyDataUrlToClipboard(currentDataUrl);
-      if (ok) {
-          showToast('Screenshot copied to clipboard!');
-          copyBtn.querySelector('span').textContent = 'Copied!';
-          setTimeout(() => copyBtn.querySelector('span').textContent = originalText, 2000);
-      } else {
-          showToast('Failed to copy image', 'error');
-          copyBtn.querySelector('span').textContent = originalText;
-      }
-    }, 'primary');
+    const copyBtn = createBtn(
+      "Copy",
+      copyIcon,
+      async () => {
+        if (!navigator.clipboard) {
+          showToast(
+            "Clipboard not supported on this page (try HTTPS)",
+            "error"
+          );
+          return;
+        }
+        const originalText = copyBtn.querySelector("span").textContent;
+        copyBtn.querySelector("span").textContent = "Copying...";
+
+        const ok = await copyDataUrlToClipboard(currentDataUrl);
+        if (ok) {
+          showToast("Screenshot copied to clipboard!");
+          copyBtn.querySelector("span").textContent = "Copied!";
+          setTimeout(
+            () => (copyBtn.querySelector("span").textContent = originalText),
+            2000
+          );
+        } else {
+          showToast("Failed to copy image", "error");
+          copyBtn.querySelector("span").textContent = originalText;
+        }
+      },
+      "primary"
+    );
 
     // Download Button
-    const downloadBtn = createBtn('Save', downloadIcon, () => {
-        downloadBtn.querySelector('span').textContent = 'Saving...';
-        const filename = `screenshot_${new Date().toISOString().replace(/[:.]/g, '-')}.png`;
-        
-        chrome.runtime.sendMessage({
-            type: 'DOWNLOAD',
+    const downloadBtn = createBtn(
+      "Save",
+      downloadIcon,
+      () => {
+        downloadBtn.querySelector("span").textContent = "Saving...";
+        const filename = `screenshot_${new Date()
+          .toISOString()
+          .replace(/[:.]/g, "-")}.png`;
+
+        chrome.runtime.sendMessage(
+          {
+            type: "DOWNLOAD",
             dataUrl: currentDataUrl,
-            filename: filename
-        }, (res) => {
+            filename: filename,
+          },
+          (res) => {
             if (chrome.runtime.lastError || (res && !res.ok)) {
-                showToast('Download failed. Check console.', 'error');
+              showToast("Download failed. Check console.", "error");
             } else {
-                showToast('Download started');
+              showToast("Download started");
             }
-            downloadBtn.querySelector('span').textContent = 'Save';
-        });
-    }, 'success');
+            downloadBtn.querySelector("span").textContent = "Save";
+          }
+        );
+      },
+      "success"
+    );
 
     // Close Button (Icon only)
-    const closeBtn = createBtn('', closeIcon, closeSession);
-    closeBtn.style.padding = '8px'; // square it up
-    
+    const closeBtn = createBtn("", closeIcon, closeSession);
+    closeBtn.style.padding = "8px"; // square it up
+
     toolbar.appendChild(copyBtn);
     toolbar.appendChild(downloadBtn);
-    
-    const sep = document.createElement('div');
-    sep.style.width = '1px';
-    sep.style.height = '24px';
-    sep.style.background = '#555';
-    sep.style.margin = '0 4px';
+
+    const sep = document.createElement("div");
+    sep.style.width = "1px";
+    sep.style.height = "24px";
+    sep.style.background = "#555";
+    sep.style.margin = "0 4px";
     toolbar.appendChild(sep);
-    
+
     toolbar.appendChild(closeBtn);
 
     // Timer Progress Bar
-    const timerBar = document.createElement('div');
+    const timerBar = document.createElement("div");
     Object.assign(timerBar.style, {
-        position: 'absolute',
-        bottom: '0',
-        left: '0',
-        height: '3px',
-        background: THEME.primary,
-        width: '100%',
-        animation: 'smartScreenshotTimer 10s linear forwards',
-        borderRadius: '0 0 12px 12px'
+      position: "absolute",
+      bottom: "0",
+      left: "0",
+      height: "3px",
+      background: THEME.primary,
+      width: "100%",
+      animation: "smartScreenshotTimer 10s linear forwards",
+      borderRadius: "0 0 12px 12px",
     });
-    
+
     toolbar.appendChild(timerBar);
-    
+
     // Timer logic
     timerBar.onanimationend = () => closeSession();
-    
+
     toolbar.onmouseenter = () => {
-        timerBar.style.animationPlayState = 'paused';
-        timerBar.style.opacity = '0.5';
+      timerBar.style.animationPlayState = "paused";
+      timerBar.style.opacity = "0.5";
     };
     toolbar.onmouseleave = () => {
-        timerBar.style.animationPlayState = 'running';
-        timerBar.style.opacity = '1';
+      timerBar.style.animationPlayState = "running";
+      timerBar.style.opacity = "1";
     };
 
     document.body.appendChild(toolbar);
 
     // Animate In
     requestAnimationFrame(() => {
-        toolbar.style.opacity = '1';
-        toolbar.style.transform = 'translate(-50%, 0)';
+      toolbar.style.opacity = "1";
+      toolbar.style.transform = "translate(-50%, 0)";
     });
-    
+
     // Auto-copy attempt
-    copyDataUrlToClipboard(currentDataUrl).then(ok => {
-        if (ok) showToast('Copied to clipboard!');
+    copyDataUrlToClipboard(currentDataUrl).then((ok) => {
+      if (ok) showToast("Copied to clipboard!");
     });
   }
 
   function handleCanvasResult(canvas) {
     try {
-        const dataUrl = canvas.toDataURL('image/png');
-        currentDataUrl = dataUrl;
-        showToolbar();
+      const dataUrl = canvas.toDataURL("image/png");
+      currentDataUrl = dataUrl;
+      showToolbar();
     } catch (e) {
-        showToast('Failed to process screenshot', 'error');
-        console.error(e);
+      showToast("Failed to process screenshot", "error");
+      console.error(e);
     }
   }
 
@@ -534,26 +569,26 @@
 
   function ensureElementInfoBox() {
     if (elementInfoBox) return;
-    elementInfoBox = document.createElement('div');
+    elementInfoBox = document.createElement("div");
     markAsUi(elementInfoBox);
-    
+
     Object.assign(elementInfoBox.style, {
-      position: 'absolute',
-      padding: '4px 8px',
-      borderRadius: '4px',
+      position: "absolute",
+      padding: "4px 8px",
+      borderRadius: "4px",
       background: THEME.primary,
-      color: '#fff',
-      fontFamily: 'monospace',
-      fontSize: '11px',
-      pointerEvents: 'none',
+      color: "#fff",
+      fontFamily: "monospace",
+      fontSize: "11px",
+      pointerEvents: "none",
       zIndex: String(Z_INDEX_BASE + 1),
-      maxWidth: '240px',
-      whiteSpace: 'nowrap',
-      overflow: 'hidden',
-      textOverflow: 'ellipsis',
-      boxShadow: '0 2px 4px rgba(0,0,0,0.2)'
+      maxWidth: "240px",
+      whiteSpace: "nowrap",
+      overflow: "hidden",
+      textOverflow: "ellipsis",
+      boxShadow: "0 2px 4px rgba(0,0,0,0.2)",
     });
-    
+
     document.body.appendChild(elementInfoBox);
   }
 
@@ -561,9 +596,9 @@
     ensureElementInfoBox();
 
     const tagName = el.tagName.toLowerCase();
-    const id = el.id ? '#' + el.id : '';
+    const id = el.id ? "#" + el.id : "";
     const size = `${Math.round(rect.width)}×${Math.round(rect.height)}`;
-    
+
     elementInfoBox.innerHTML = `<span style="font-weight:bold">${tagName}${id}</span> <span style="opacity:0.8">| ${size}</span>`;
 
     const top = window.scrollY + rect.top - 28;
@@ -571,23 +606,29 @@
 
     elementInfoBox.style.top = `${Math.max(top, window.scrollY + 4)}px`;
     elementInfoBox.style.left = `${Math.max(left, window.scrollX + 4)}px`;
-    elementInfoBox.style.display = 'block';
+    elementInfoBox.style.display = "block";
   }
 
   function hideElementInfoBox() {
-    if (elementInfoBox) elementInfoBox.style.display = 'none';
+    if (elementInfoBox) elementInfoBox.style.display = "none";
   }
 
   // ---------- ELEMENT PICKER ----------
 
   function isRelevantElement(el) {
     if (!el || !el.getBoundingClientRect) return false;
-    
+
     // Ignore our own UI
-    if (el.getAttribute && el.getAttribute(UI_ATTR_NAME) === UI_ATTR_VALUE) return false;
-    
+    if (el.getAttribute && el.getAttribute(UI_ATTR_NAME) === UI_ATTR_VALUE)
+      return false;
+
     const style = window.getComputedStyle(el);
-    if (style.display === 'none' || style.visibility === 'hidden' || style.opacity === '0') return false;
+    if (
+      style.display === "none" ||
+      style.visibility === "hidden" ||
+      style.opacity === "0"
+    )
+      return false;
 
     const rect = el.getBoundingClientRect();
     if (rect.width < 5 || rect.height < 5) return false;
@@ -599,17 +640,21 @@
     // If the element itself is relevant and "leaf-like" (has text or is image), prefer it.
     // Otherwise, if it's a generic wrapper, we might want to look slightly deeper OR
     // if the user is hovering a specific small part, keep it.
-    
+
     // For now, the standard elementFromPoint is usually what the user expects visually.
     // We just need to filter out full-screen overlays or transparent wrappers that
     // block the actual content.
-    
+
     let current = el;
-    while (current && current !== document.body && current !== document.documentElement) {
-        if (isRelevantElement(current)) {
-            return current;
-        }
-        current = current.parentElement;
+    while (
+      current &&
+      current !== document.body &&
+      current !== document.documentElement
+    ) {
+      if (isRelevantElement(current)) {
+        return current;
+      }
+      current = current.parentElement;
     }
     return el; // fallback
   }
@@ -619,68 +664,71 @@
     pickerActive = true;
     lastTarget = null;
     currentCandidate = null;
-    showInfoOverlay('Hover to select. Click to capture. Use Arrow Keys \u2191\u2193 to adjust.');
+    showInfoOverlay(
+      "Hover to select. Click to capture. Use Arrow Keys \u2191\u2193 to adjust."
+    );
 
-    document.body.style.cursor = 'crosshair';
+    document.body.style.cursor = "crosshair";
 
     if (!highlightBox) {
-      highlightBox = document.createElement('div');
+      highlightBox = document.createElement("div");
       markAsUi(highlightBox);
       Object.assign(highlightBox.style, {
-        position: 'absolute',
+        position: "absolute",
         border: `2px solid ${THEME.primary}`,
-        background: 'rgba(74, 144, 226, 0.1)',
-        pointerEvents: 'none',
+        background: "rgba(74, 144, 226, 0.1)",
+        pointerEvents: "none",
         zIndex: String(Z_INDEX_BASE),
-        transition: 'all 0.1s ease-out'
+        transition: "all 0.1s ease-out",
       });
       document.body.appendChild(highlightBox);
     }
 
-    document.addEventListener('mousemove', onPickerMouseMove, true);
-    document.addEventListener('click', onPickerClick, true);
-    document.addEventListener('keydown', onPickerKeyDown, true);
+    document.addEventListener("mousemove", onPickerMouseMove, true);
+    document.addEventListener("click", onPickerClick, true);
+    document.addEventListener("keydown", onPickerKeyDown, true);
   }
 
   function stopElementPicker() {
     pickerActive = false;
-    document.removeEventListener('mousemove', onPickerMouseMove, true);
-    document.removeEventListener('click', onPickerClick, true);
-    document.removeEventListener('keydown', onPickerKeyDown, true);
+    document.removeEventListener("mousemove", onPickerMouseMove, true);
+    document.removeEventListener("click", onPickerClick, true);
+    document.removeEventListener("keydown", onPickerKeyDown, true);
 
     if (highlightBox) {
       highlightBox.remove();
       highlightBox = null;
     }
     hideElementInfoBox();
-    document.body.style.cursor = '';
+    document.body.style.cursor = "";
     hideInfoOverlay();
   }
 
   function updateHighlight(el) {
-      if (!el) return;
-      currentCandidate = el;
-      const rect = el.getBoundingClientRect();
-      
-      if (highlightBox) {
-        highlightBox.style.top = `${window.scrollY + rect.top}px`;
-        highlightBox.style.left = `${window.scrollX + rect.left}px`;
-        highlightBox.style.width = `${rect.width}px`;
-        highlightBox.style.height = `${rect.height}px`;
-      }
-      updateElementInfoBox(rect, el);
+    if (!el) return;
+    currentCandidate = el;
+    const rect = el.getBoundingClientRect();
+
+    if (highlightBox) {
+      highlightBox.style.top = `${window.scrollY + rect.top}px`;
+      highlightBox.style.left = `${window.scrollX + rect.left}px`;
+      highlightBox.style.width = `${rect.width}px`;
+      highlightBox.style.height = `${rect.height}px`;
+    }
+    updateElementInfoBox(rect, el);
   }
 
   function onPickerMouseMove(e) {
     if (!pickerActive) return;
     const el = document.elementFromPoint(e.clientX, e.clientY);
     if (!el) return;
-    
+
     // Ignore our own UI
     let p = el;
-    while(p) {
-        if (p.getAttribute && p.getAttribute(UI_ATTR_NAME) === UI_ATTR_VALUE) return;
-        p = p.parentElement;
+    while (p) {
+      if (p.getAttribute && p.getAttribute(UI_ATTR_NAME) === UI_ATTR_VALUE)
+        return;
+      p = p.parentElement;
     }
 
     lastTarget = el;
@@ -701,8 +749,8 @@
 
   function onPickerKeyDown(e) {
     if (!pickerActive) return;
-    
-    if (e.key === 'Escape') {
+
+    if (e.key === "Escape") {
       e.preventDefault();
       e.stopPropagation();
       stopElementPicker();
@@ -711,78 +759,80 @@
 
     // Allow manual adjustment of selection
     if (currentCandidate) {
-        if (e.key === 'ArrowUp') {
-            e.preventDefault();
-            e.stopPropagation();
-            if (currentCandidate.parentElement && currentCandidate.parentElement !== document.body) {
-                updateHighlight(currentCandidate.parentElement);
-            }
-        } else if (e.key === 'ArrowDown') {
-            e.preventDefault();
-            e.stopPropagation();
-            // Try to find a child. This is tricky as there can be many.
-            // We'll pick the first relevant child.
-            for (let child of currentCandidate.children) {
-                if (isRelevantElement(child)) {
-                    updateHighlight(child);
-                    break;
-                }
-            }
+      if (e.key === "ArrowUp") {
+        e.preventDefault();
+        e.stopPropagation();
+        if (
+          currentCandidate.parentElement &&
+          currentCandidate.parentElement !== document.body
+        ) {
+          updateHighlight(currentCandidate.parentElement);
         }
+      } else if (e.key === "ArrowDown") {
+        e.preventDefault();
+        e.stopPropagation();
+        // Try to find a child. This is tricky as there can be many.
+        // We'll pick the first relevant child.
+        for (let child of currentCandidate.children) {
+          if (isRelevantElement(child)) {
+            updateHighlight(child);
+            break;
+          }
+        }
+      }
     }
   }
-
 
   function startAreaPicker() {
     if (areaActive) return;
     if (pickerActive) stopElementPicker();
 
     areaActive = true;
-    showInfoOverlay('Click and drag to select an area.');
+    showInfoOverlay("Click and drag to select an area.");
 
-    document.body.style.cursor = 'crosshair';
+    document.body.style.cursor = "crosshair";
 
-    areaOverlay = document.createElement('div');
+    areaOverlay = document.createElement("div");
     markAsUi(areaOverlay);
     Object.assign(areaOverlay.style, {
-      position: 'fixed',
-      top: '0',
-      left: '0',
-      width: '100%',
-      height: '100%',
+      position: "fixed",
+      top: "0",
+      left: "0",
+      width: "100%",
+      height: "100%",
       zIndex: String(Z_INDEX_BASE),
-      cursor: 'crosshair',
-      background: 'rgba(0, 0, 0, 0.05)' 
+      cursor: "crosshair",
+      background: "rgba(0, 0, 0, 0.05)",
     });
-    
-    areaSelectionBox = document.createElement('div');
+
+    areaSelectionBox = document.createElement("div");
     markAsUi(areaSelectionBox);
     Object.assign(areaSelectionBox.style, {
-      position: 'fixed',
-      border: '2px dashed #fff',
-      boxShadow: '0 0 0 9999px rgba(0, 0, 0, 0.5)', 
-      display: 'none',
+      position: "fixed",
+      border: "2px dashed #fff",
+      boxShadow: "0 0 0 9999px rgba(0, 0, 0, 0.5)",
+      display: "none",
       zIndex: String(Z_INDEX_BASE + 1),
-      pointerEvents: 'none'
+      pointerEvents: "none",
     });
 
     areaOverlay.appendChild(areaSelectionBox);
     document.body.appendChild(areaOverlay);
 
-    document.addEventListener('mousedown', onAreaMouseDown, true);
-    document.addEventListener('mousemove', onAreaMouseMove, true);
-    document.addEventListener('mouseup', onAreaMouseUp, true);
-    document.addEventListener('keydown', onAreaKeyDown, true);
+    document.addEventListener("mousedown", onAreaMouseDown, true);
+    document.addEventListener("mousemove", onAreaMouseMove, true);
+    document.addEventListener("mouseup", onAreaMouseUp, true);
+    document.addEventListener("keydown", onAreaKeyDown, true);
   }
 
   function stopAreaPicker() {
     areaActive = false;
     isDragging = false;
 
-    document.removeEventListener('mousedown', onAreaMouseDown, true);
-    document.removeEventListener('mousemove', onAreaMouseMove, true);
-    document.removeEventListener('mouseup', onAreaMouseUp, true);
-    document.removeEventListener('keydown', onAreaKeyDown, true);
+    document.removeEventListener("mousedown", onAreaMouseDown, true);
+    document.removeEventListener("mousemove", onAreaMouseMove, true);
+    document.removeEventListener("mouseup", onAreaMouseUp, true);
+    document.removeEventListener("keydown", onAreaKeyDown, true);
 
     if (areaOverlay) {
       areaOverlay.remove();
@@ -790,7 +840,7 @@
       areaSelectionBox = null;
     }
 
-    document.body.style.cursor = '';
+    document.body.style.cursor = "";
     hideInfoOverlay();
   }
 
@@ -805,9 +855,9 @@
     if (areaSelectionBox) {
       areaSelectionBox.style.left = `${startX}px`;
       areaSelectionBox.style.top = `${startY}px`;
-      areaSelectionBox.style.width = '0px';
-      areaSelectionBox.style.height = '0px';
-      areaSelectionBox.style.display = 'block';
+      areaSelectionBox.style.width = "0px";
+      areaSelectionBox.style.height = "0px";
+      areaSelectionBox.style.display = "block";
     }
   }
 
@@ -844,7 +894,7 @@
 
   function onAreaKeyDown(e) {
     if (!areaActive) return;
-    if (e.key === 'Escape') {
+    if (e.key === "Escape") {
       e.preventDefault();
       e.stopPropagation();
       stopAreaPicker();
@@ -852,18 +902,18 @@
   }
 
   async function captureArea(rect) {
-    showLoadingOverlay('Processing area...');
+    showLoadingOverlay("Processing area...");
     await waitForFrame();
 
     try {
-        const dataUrl = await captureCleanShot();
-        const canvas = await cropElementFromScreenshot(dataUrl, rect);
-        handleCanvasResult(canvas);
+      const dataUrl = await captureCleanShot();
+      const canvas = await cropElementFromScreenshot(dataUrl, rect);
+      handleCanvasResult(canvas);
     } catch (err) {
-        showToast('Area capture failed', 'error');
-        console.error(err);
+      showToast("Area capture failed", "error");
+      console.error(err);
     } finally {
-        hideLoadingOverlay();
+      hideLoadingOverlay();
     }
   }
 
@@ -878,27 +928,33 @@
       let sw = Math.floor(rect.width * dpr);
       let sh = Math.floor(rect.height * dpr);
 
-      if (sx < 0) { sw += sx; sx = 0; }
-      if (sy < 0) { sh += sy; sy = 0; }
-      
+      if (sx < 0) {
+        sw += sx;
+        sx = 0;
+      }
+      if (sy < 0) {
+        sh += sy;
+        sy = 0;
+      }
+
       if (sx + sw > viewportWidthPx) sw = viewportWidthPx - sx;
       if (sy + sh > viewportHeightPx) sh = viewportHeightPx - sy;
 
       if (sw <= 0 || sh <= 0) {
-        reject(new Error('Element is outside viewport'));
+        reject(new Error("Element is outside viewport"));
         return;
       }
 
       const img = new Image();
       img.onload = () => {
-        const canvas = document.createElement('canvas');
+        const canvas = document.createElement("canvas");
         canvas.width = sw;
         canvas.height = sh;
-        const ctx = canvas.getContext('2d');
+        const ctx = canvas.getContext("2d");
         const sourceW = Math.min(sw, img.width - sx);
         const sourceH = Math.min(sh, img.height - sy);
         if (sourceW > 0 && sourceH > 0) {
-            ctx.drawImage(img, sx, sy, sourceW, sourceH, 0, 0, sourceW, sourceH);
+          ctx.drawImage(img, sx, sy, sourceW, sourceH, 0, 0, sourceW, sourceH);
         }
         resolve(canvas);
       };
@@ -908,18 +964,19 @@
   }
 
   async function captureElement(el) {
-    showLoadingOverlay('Processing element...');
+    showLoadingOverlay("Processing element...");
     await waitForFrame();
 
     try {
       const rect = el.getBoundingClientRect();
-      if (rect.width <= 0 || rect.height <= 0) throw new Error('Element has no size');
+      if (rect.width <= 0 || rect.height <= 0)
+        throw new Error("Element has no size");
 
       const dataUrl = await captureCleanShot();
       const canvas = await cropElementFromScreenshot(dataUrl, rect);
       handleCanvasResult(canvas);
     } catch (err) {
-      showToast('Element capture failed', 'error');
+      showToast("Element capture failed", "error");
       console.error(err);
     } finally {
       hideLoadingOverlay();
@@ -937,32 +994,38 @@
         const destX = 0;
         const destY = Math.floor(scrollY * dpr);
 
-        if (destY >= canvasHeight) { resolve(); return; }
+        if (destY >= canvasHeight) {
+          resolve();
+          return;
+        }
         if (destY + sh > canvasHeight) sh = canvasHeight - destY;
 
         if (sh > 0) ctx.drawImage(img, 0, 0, sw, sh, destX, destY, sw, sh);
         resolve();
       };
-      img.onerror = () => { resolve(); };
+      img.onerror = () => {
+        resolve();
+      };
       img.src = dataUrl;
     });
   }
 
   async function captureFullPage() {
-    showLoadingOverlay('Preparing...');
+    showLoadingOverlay("Preparing...");
     const uiElements = getUiElements();
     hideUi(uiElements);
     hideScrollbars();
     await waitForFrame();
 
     try {
-      const scrollElem = document.scrollingElement || document.documentElement || document.body;
+      const scrollElem =
+        document.scrollingElement || document.documentElement || document.body;
       const totalHeight = scrollElem.scrollHeight;
       const viewportHeight = window.innerHeight;
       const viewportWidth = window.innerWidth;
       const dpr = window.devicePixelRatio || 1;
 
-      const overlap = 80; 
+      const overlap = 80;
       const steps = [];
 
       if (totalHeight <= viewportHeight) {
@@ -976,37 +1039,38 @@
         steps.push(totalHeight - viewportHeight);
       }
 
-      const canvas = document.createElement('canvas');
+      const canvas = document.createElement("canvas");
       canvas.width = Math.floor(viewportWidth * dpr);
       canvas.height = Math.floor(totalHeight * dpr);
-      const ctx = canvas.getContext('2d');
+      const ctx = canvas.getContext("2d");
       const originalY = window.scrollY;
 
       for (let i = 0; i < steps.length; i++) {
         const scrollY = steps[i];
-        
+
         // Show progress in loading overlay (but keep it hidden from capture)
         showUi(uiElements);
-        showLoadingOverlay(`Stitching ${Math.round((i / steps.length) * 100)}%`);
-        
+        showLoadingOverlay(
+          `Stitching ${Math.round((i / steps.length) * 100)}%`
+        );
+
         window.scrollTo(0, scrollY);
         await sleep(200);
-        
+
         hideUi(uiElements);
         await waitForFrame();
-        
+
         const dataUrl = await captureVisibleTabImage();
         await drawSegmentOnCanvas(dataUrl, ctx, dpr, scrollY, canvas.height);
       }
 
       window.scrollTo(0, originalY);
-      
+
       showUi(uiElements);
       handleCanvasResult(canvas);
-      
     } catch (err) {
       showUi(uiElements);
-      showToast('Full-page capture failed', 'error');
+      showToast("Full-page capture failed", "error");
       console.error(err);
     } finally {
       showScrollbars();
@@ -1017,16 +1081,15 @@
   // ---------- MESSAGE HANDLER ----------
 
   chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
-    if (message.type === 'startElementCapture') {
+    if (message.type === "startElementCapture") {
       startElementPicker();
-      sendResponse({status: 'started'});
-    } else if (message.type === 'startAreaCapture') {
+      sendResponse({ status: "started" });
+    } else if (message.type === "startAreaCapture") {
       startAreaPicker();
-      sendResponse({status: 'started'});
-    } else if (message.type === 'captureFullPage') {
+      sendResponse({ status: "started" });
+    } else if (message.type === "captureFullPage") {
       captureFullPage();
-      sendResponse({status: 'started'});
+      sendResponse({ status: "started" });
     }
   });
-
 })();
