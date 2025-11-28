@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Smart Screenshot</title>
+  <style>
+    :root {
+      --primary: #4A90E2;
+      --bg: #2b2b2b;
+      --surface: #3c3c3c;
+      --text: #ececec;
+      --hover: #505050;
+      --danger: #ef5350;
+    }
+
+    body {
+      margin: 0;
+      padding: 0;
+      width: 240px;
+      background-color: var(--bg);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+      user-select: none;
+    }
+
+    header {
+      padding: 16px;
+      background-color: var(--surface);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      border-bottom: 1px solid #444;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: 15px;
+      font-weight: 600;
+      letter-spacing: 0.5px;
+    }
+
+    .menu {
+      padding: 8px;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    button {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      width: 100%;
+      padding: 10px 12px;
+      background: transparent;
+      border: none;
+      border-radius: 6px;
+      color: var(--text);
+      font-size: 13px;
+      cursor: pointer;
+      transition: background 0.2s;
+      text-align: left;
+    }
+
+    button:hover {
+      background-color: var(--hover);
+    }
+
+    button:active {
+      transform: scale(0.98);
+    }
+
+    .icon {
+      width: 18px;
+      height: 18px;
+      fill: currentColor;
+      opacity: 0.8;
+    }
+
+    .separator {
+      height: 1px;
+      background-color: #444;
+      margin: 4px 8px;
+    }
+
+    /* Specific Colors */
+    #fullPage { color: #90caf9; }
+    #areaCapture { color: #a5d6a7; }
+    #elementCapture { color: #ffcc80; }
+
+  </style>
+</head>
+<body>
+  <header>
+    <!-- Camera Icon -->
+    <svg class="icon" viewBox="0 0 24 24"><path d="M12 8c-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4-1.79-4-4-4zm0 6c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm9-8h-3.17L16 4H8l-1.83 2H3c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h18c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2zm0 14H3V8h4.05l1.83-2h6.24l1.83 2H21v12z"/></svg>
+    <h1>Smart Capture</h1>
+  </header>
+  
+  <div class="menu">
+    <button id="areaCapture">
+      <svg class="icon" viewBox="0 0 24 24"><path d="M3 5v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2zm2 0h14v14H5V5zm6 6h2v2h-2v-2z"/></svg>
+      Capture Area
+    </button>
+    
+    <button id="elementCapture">
+      <svg class="icon" viewBox="0 0 24 24"><path d="M4 4h7V2H2v9h2V4zm6 9l-4 5h12l-3-4-2.03 2.71L10 13zm7-4.5c0-.83-.67-1.5-1.5-1.5S14 7.67 14 8.5s.67 1.5 1.5 1.5S17 9.33 17 8.5zM20 2h-7v2h7v7h2V4c0-1.1-.9-2-2-2zm0 18h-7v2h7c1.1 0 2-.9 2-2v-9h-2v7zM4 13H2v9c0 1.1.9 2 2 2h9v-2H4v-9z"/></svg>
+      Capture Element
+    </button>
+
+    <div class="separator"></div>
+
+    <button id="fullPage">
+      <svg class="icon" viewBox="0 0 24 24"><path d="M19 12h-1V3h-4v9h-1l3 3 3-3zm-8 6H6v-3H5v3c0 1.1.9 2 2 2h4v-2zm-5-9h1V6h4V5H6c-1.1 0-2 .9-2 2v2zm14 8h-4v2h4c1.1 0 2-.9 2-2v-3h-1v3z"/></svg>
+      Capture Full Page
+    </button>
+  </div>
+
+  <script src="popup.js"></script>
+</body>
+</html>
