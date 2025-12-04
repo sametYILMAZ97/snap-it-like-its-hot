@@ -5,6 +5,9 @@ A powerful, Vivaldi-inspired screenshot extension for Google Chrome and Chromium
 ## Features
 
 - **Capture Element:** Automatically detects and highlights page elements (divs, images, buttons) for precise capture. Includes keyboard navigation (Up/Down arrows) to select parent or child elements.
+  - Captures elements that extend beyond the viewport using scroll-and-stitch technology
+  - Captures sticky/fixed positioned elements (headers, footers, sidebars)
+  - Automatically hides overlaying sticky elements for clean captures
 - **Capture Area:** Drag-and-drop to select a custom rectangular area on the screen.
 - **Capture Full Page:** Automatically scrolls through the entire page and stitches it into a single high-quality image.
 - **Floating Toolbar:** A modern, non-intrusive toolbar appears after capture with a thumbnail preview.
@@ -12,7 +15,10 @@ A powerful, Vivaldi-inspired screenshot extension for Google Chrome and Chromium
   - **Copy:** One-click copy to clipboard (supports auto-copy).
   - **Save:** Downloads the screenshot as a PNG with a timestamped filename.
   - **Timer:** Auto-closes the toolbar after 10 seconds of inactivity.
-- **Clean Capture:** Automatically hides scrollbars and extension UI elements before taking the screenshot to ensure a clean look.
+- **Clean Capture:** 
+  - Automatically hides scrollbars and extension UI elements before taking the screenshot
+  - Removes sticky/fixed positioned overlays (navigation bars, headers, footers) for unobstructed captures
+  - Respects Chrome's rate limits to ensure reliable captures
 
 ## Installation
 
@@ -26,7 +32,7 @@ A powerful, Vivaldi-inspired screenshot extension for Google Chrome and Chromium
 1.  Click the extension icon in the toolbar.
 2.  Select a mode:
     - **Capture Area:** Click and drag.
-    - **Capture Element:** Hover over elements. Use `Arrow Up` to select parent, `Arrow Down` to select child. Click to capture.
+    - **Capture Element:** Hover over elements. Use `Arrow Up` to select parent, `Arrow Down` to select child, or press `Enter` to capture. You can also click to capture.
     - **Capture Full Page:** Click and wait for the scrolling to finish.
 3.  Use the floating toolbar to **Copy** or **Save** your screenshot.
 

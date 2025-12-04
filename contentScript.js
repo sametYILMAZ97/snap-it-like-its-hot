@@ -69,6 +69,75 @@
     document.head.appendChild(style);
   }
 
+  function findAndHideStickyElements(excludeElement = null) {
+    const stickyElements = [];
+    
+    // Find all elements with sticky or fixed positioning
+    document.querySelectorAll("*").forEach((el) => {
+      // Skip the element we want to capture
+      if (excludeElement && (el === excludeElement || excludeElement.contains(el))) {
+        return;
+      }
+      
+      const style = window.getComputedStyle(el);
+      const position = style.position;
+      
+      if (position === "sticky" || position === "fixed") {
+        stickyElements.push({
+          element: el,
+          originalDisplay: el.style.display,
+          originalVisibility: el.style.visibility,
+        });
+        el.style.display = "none";
+      }
+    });
+    
+    return stickyElements;
+  }
+
+  function restoreStickyElements(stickyElements) {
+    stickyElements.forEach(({ element, originalDisplay, originalVisibility }) => {
+      element.style.display = originalDisplay;
+      element.style.visibility = originalVisibility;
+    });
+  }
+
+  function makeElementNonSticky(el) {
+    const originalPosition = el.style.position;
+    const originalTop = el.style.top;
+    const originalLeft = el.style.left;
+    const originalRight = el.style.right;
+    const originalBottom = el.style.bottom;
+    const originalZIndex = el.style.zIndex;
+    
+    el.style.position = "relative";
+    el.style.top = "auto";
+    el.style.left = "auto";
+    el.style.right = "auto";
+    el.style.bottom = "auto";
+    el.style.zIndex = "auto";
+    
+    return {
+      element: el,
+      originalPosition,
+      originalTop,
+      originalLeft,
+      originalRight,
+      originalBottom,
+      originalZIndex,
+    };
+  }
+
+  function restoreElementPositioning(positionState) {
+    const { element, originalPosition, originalTop, originalLeft, originalRight, originalBottom, originalZIndex } = positionState;
+    element.style.position = originalPosition;
+    element.style.top = originalTop;
+    element.style.left = originalLeft;
+    element.style.right = originalRight;
+    element.style.bottom = originalBottom;
+    element.style.zIndex = originalZIndex;
+  }
+
   // ---------- Toast Notification System ----------
 
   function showToast(message, type = "info") {
@@ -181,17 +250,22 @@
           { type: "CAPTURE_VISIBLE_TAB" },
           (response) => {
             if (chrome.runtime.lastError) {
-              reject(chrome.runtime.lastError);
+              const errorMsg = chrome.runtime.lastError.message || "Unknown capture error";
+              console.error("Capture error:", errorMsg);
+              reject(new Error(errorMsg));
               return;
             }
             if (!response || !response.ok || !response.dataUrl) {
-              reject(new Error(response?.error || "captureVisibleTab failed"));
+              const errorMsg = response?.error || "captureVisibleTab failed";
+              console.error("Capture failed:", errorMsg);
+              reject(new Error(errorMsg));
               return;
             }
             resolve(response.dataUrl);
           }
         );
       } catch (e) {
+        console.error("Exception during capture:", e);
         reject(e);
       }
     });
@@ -757,6 +831,16 @@
       return;
     }
 
+    // Enter key takes the screenshot
+    if (e.key === "Enter") {
+      e.preventDefault();
+      e.stopPropagation();
+      const target = currentCandidate || lastTarget;
+      stopElementPicker();
+      if (target) captureElement(target);
+      return;
+    }
+
     // Allow manual adjustment of selection
     if (currentCandidate) {
       if (e.key === "ArrowUp") {
@@ -968,19 +1052,199 @@
     await waitForFrame();
 
     try {
+      const elementStyle = window.getComputedStyle(el);
+      const isElementSticky = elementStyle.position === "sticky" || elementStyle.position === "fixed";
+      
       const rect = el.getBoundingClientRect();
       if (rect.width <= 0 || rect.height <= 0)
         throw new Error("Element has no size");
 
-      const dataUrl = await captureCleanShot();
-      const canvas = await cropElementFromScreenshot(dataUrl, rect);
-      handleCanvasResult(canvas);
+      const viewportHeight = window.innerHeight;
+      const elementHeight = rect.height;
+      
+      // For sticky/fixed elements, always use simple capture (no multi-capture scrolling)
+      if (isElementSticky) {
+        // Just scroll to it and capture once
+        const dataUrl = await captureCleanShotHidingStickyElements(el);
+        const canvas = await cropElementFromScreenshot(dataUrl, rect);
+        handleCanvasResult(canvas);
+      }
+      // Check if element is larger than viewport or extends beyond viewport
+      else if (elementHeight > viewportHeight || 
+          rect.top < 0 || 
+          rect.bottom > viewportHeight) {
+        // Use multi-capture stitching for large/off-screen elements
+        const canvas = await captureElementWithStitching(el);
+        handleCanvasResult(canvas);
+      } else {
+        // Element is fully visible, use simple capture
+        const dataUrl = await captureCleanShotHidingStickyElements(el);
+        const canvas = await cropElementFromScreenshot(dataUrl, rect);
+        handleCanvasResult(canvas);
+      }
     } catch (err) {
       showToast("Element capture failed", "error");
       console.error(err);
     } finally {
       hideLoadingOverlay();
     }
+  }
+
+  async function captureCleanShotHidingStickyElements(excludeElement = null) {
+    const stickyElements = findAndHideStickyElements(excludeElement);
+    const elementPositionState = excludeElement ? makeElementNonSticky(excludeElement) : null;
+    const uiElements = getUiElements();
+    hideUi(uiElements);
+    hideScrollbars();
+    await waitForFrame();
+
+    try {
+      return await captureVisibleTabImage();
+    } finally {
+      if (elementPositionState) {
+        restoreElementPositioning(elementPositionState);
+      }
+      restoreStickyElements(stickyElements);
+      showScrollbars();
+      showUi(uiElements);
+    }
+  }
+
+  async function captureElementWithStitching(el) {
+    const stickyElements = findAndHideStickyElements(el);
+    const elementPositionState = makeElementNonSticky(el);
+    const uiElements = getUiElements();
+    hideUi(uiElements);
+    hideScrollbars();
+    
+    const originalScrollX = window.scrollX;
+    const originalScrollY = window.scrollY;
+    
+    try {
+      // Get element's absolute position and size
+      const rect = el.getBoundingClientRect();
+      const elementTop = window.scrollY + rect.top;
+      const elementLeft = window.scrollX + rect.left;
+      const elementWidth = rect.width;
+      const elementHeight = rect.height;
+      
+      const viewportHeight = window.innerHeight;
+      const dpr = window.devicePixelRatio || 1;
+      
+      // Calculate how many captures we need
+      const overlap = 80;
+      const steps = [];
+      
+      // Element needs multiple captures
+      let y = elementTop;
+      const elementBottom = elementTop + elementHeight;
+      
+      while (y < elementBottom - viewportHeight) {
+        steps.push(y);
+        y += viewportHeight - overlap;
+      }
+      // Add final position to capture bottom of element
+      steps.push(elementBottom - viewportHeight);
+      
+      // Create canvas for the element
+      const canvas = document.createElement("canvas");
+      canvas.width = Math.floor(elementWidth * dpr);
+      canvas.height = Math.floor(elementHeight * dpr);
+      const ctx = canvas.getContext("2d");
+      
+      for (let i = 0; i < steps.length; i++) {
+        const scrollY = steps[i];
+        
+        showUi(uiElements);
+        showLoadingOverlay(
+          `Capturing element ${Math.round(((i + 1) / steps.length) * 100)}%`
+        );
+        
+        // Scroll to position
+        window.scrollTo(elementLeft, scrollY);
+        await sleep(400);
+        
+        // Hide UI and sticky elements again before capture
+        hideUi(uiElements);
+        // Re-hide sticky elements in case they got re-shown
+        stickyElements.forEach(({ element }) => {
+          element.style.display = "none";
+        });
+        await waitForFrame();
+        
+        // Capture the visible tab
+        const dataUrl = await captureVisibleTabImage();
+        
+        // Calculate what part of this capture contains our element
+        const captureViewportTop = scrollY;
+        const captureViewportBottom = scrollY + viewportHeight;
+        
+        // Element's position relative to this capture
+        const elementTopInCapture = Math.max(0, elementTop - captureViewportTop);
+        const elementBottomInCapture = Math.min(viewportHeight, elementTop + elementHeight - captureViewportTop);
+        
+        const captureHeight = elementBottomInCapture - elementTopInCapture;
+        
+        if (captureHeight > 0) {
+          // Draw this segment onto our element canvas
+          await drawElementSegment(
+            dataUrl,
+            ctx,
+            dpr,
+            rect.left,  // Element's left position in viewport
+            elementTopInCapture,  // Where element starts in this capture
+            elementWidth,
+            captureHeight,
+            0,  // Always at left edge of element canvas
+            Math.max(0, captureViewportTop - elementTop) * dpr  // Destination Y in element canvas
+          );
+        }
+        
+        // Rate limiting delay
+        await sleep(250);
+      }
+      
+      // Restore scroll position
+      window.scrollTo(originalScrollX, originalScrollY);
+      await waitForFrame();
+      
+      showUi(uiElements);
+      showScrollbars();
+      
+      return canvas;
+    } catch (err) {
+      // Restore scroll position on error
+      window.scrollTo(originalScrollX, originalScrollY);
+      showUi(uiElements);
+      showScrollbars();
+      throw err;
+    } finally {
+      restoreElementPositioning(elementPositionState);
+      restoreStickyElements(stickyElements);
+    }
+  }
+  
+  function drawElementSegment(dataUrl, ctx, dpr, sourceX, sourceY, sourceW, sourceH, destX, destY) {
+    return new Promise((resolve) => {
+      const img = new Image();
+      img.onload = () => {
+        const sx = Math.floor(sourceX * dpr);
+        const sy = Math.floor(sourceY * dpr);
+        const sw = Math.floor(sourceW * dpr);
+        const sh = Math.floor(sourceH * dpr);
+        
+        // Ensure we don't draw outside image bounds
+        const actualSW = Math.min(sw, img.width - sx);
+        const actualSH = Math.min(sh, img.height - sy);
+        
+        if (actualSW > 0 && actualSH > 0) {
+          ctx.drawImage(img, sx, sy, actualSW, actualSH, destX, destY, actualSW, actualSH);
+        }
+        resolve();
+      };
+      img.onerror = () => resolve();
+      img.src = dataUrl;
+    });
   }
 
   // ---------- FULL-PAGE CAPTURE ----------
@@ -1055,13 +1319,16 @@
         );
 
         window.scrollTo(0, scrollY);
-        await sleep(200);
+        await sleep(400); // Increased delay for page settling
 
         hideUi(uiElements);
         await waitForFrame();
 
         const dataUrl = await captureVisibleTabImage();
         await drawSegmentOnCanvas(dataUrl, ctx, dpr, scrollY, canvas.height);
+        
+        // Additional delay between captures to respect rate limits
+        await sleep(250);
       }
 
       window.scrollTo(0, originalY);

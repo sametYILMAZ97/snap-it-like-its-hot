@@ -36,14 +36,17 @@ function sendMessageToActiveTab(message) {
                   );
                   document.body.innerHTML = `<div style="padding:10px; color:#d32f2f;">Error: ${chrome.runtime.lastError.message}</div>`;
                 } else {
-                  // Retry sending message once
-                  send(false);
+                  // Wait for content script to be ready before retrying
+                  setTimeout(() => {
+                    send(false);
+                  }, 500);
                 }
               }
             );
           } else {
             // Failed after retry
             console.error("Failed to send message even after injection.");
+            document.body.innerHTML = '<div style="padding:10px; color:#d32f2f; font-family:system-ui; font-size:13px;">Failed to initialize. Please refresh the page and try again.</div>';
           }
         } else {
           // Success
