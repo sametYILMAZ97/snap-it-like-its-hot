@@ -19,13 +19,13 @@
   // ---------- Styles ----------
 
   const THEME = {
-    bg: "#2b2b2b",
-    surface: "#3c3c3c",
-    text: "#ffffff",
-    primary: "#4A90E2",
-    success: "#66BB6A",
-    danger: "#EF5350",
-    shadow: "0 8px 24px rgba(0,0,0,0.4)",
+    bg: "#1a1b1e",
+    surface: "#25262b",
+    text: "#e9ecef",
+    primary: "#4dabf7",
+    success: "#69db7c",
+    danger: "#ff6b6b",
+    shadow: "0 4px 12px rgba(0, 0, 0, 0.2)",
   };
 
   // ---------- AREA PICKER State ----------
@@ -153,8 +153,9 @@
       background: type === "error" ? THEME.danger : THEME.surface,
       color: "#fff",
       padding: "12px 24px",
-      borderRadius: "50px",
-      fontFamily: "system-ui, sans-serif",
+      borderRadius: "8px",
+      border: "1px solid rgba(255, 255, 255, 0.1)",
+      fontFamily: "system-ui, -apple-system, sans-serif",
       fontSize: "14px",
       fontWeight: "500",
       boxShadow: THEME.shadow,
@@ -284,19 +285,22 @@
 
     Object.assign(infoOverlay.style, {
       position: "fixed",
-      top: "20px",
+      top: "24px",
       left: "50%",
       transform: "translateX(-50%)",
-      padding: "8px 16px",
-      background: "rgba(0, 0, 0, 0.7)",
-      backdropFilter: "blur(4px)",
+      padding: "10px 20px",
+      background: "rgba(26, 27, 30, 0.9)",
+      backdropFilter: "blur(8px)",
+      border: "1px solid rgba(255, 255, 255, 0.1)",
       color: "#fff",
-      fontFamily: "system-ui, sans-serif",
+      fontFamily: "system-ui, -apple-system, sans-serif",
       fontSize: "13px",
-      borderRadius: "20px",
+      fontWeight: "500",
+      borderRadius: "8px",
       zIndex: String(Z_INDEX_BASE + 1),
       pointerEvents: "none",
       transition: "opacity 0.2s",
+      boxShadow: "0 4px 12px rgba(0,0,0,0.1)",
     });
 
     const msg = text || "Smart Screenshot active. Press Esc to cancel.";
@@ -340,16 +344,18 @@
 
     const box = document.createElement("div");
     Object.assign(box.style, {
-      background: "#222",
+      background: THEME.surface,
       color: "#fff",
-      padding: "12px 20px",
-      borderRadius: "8px",
-      fontFamily: "system-ui, sans-serif",
+      padding: "16px 24px",
+      borderRadius: "12px",
+      border: "1px solid rgba(255, 255, 255, 0.1)",
+      fontFamily: "system-ui, -apple-system, sans-serif",
       fontSize: "14px",
-      boxShadow: "0 4px 12px rgba(0,0,0,0.3)",
+      fontWeight: "500",
+      boxShadow: THEME.shadow,
       display: "flex",
       alignItems: "center",
-      gap: "10px",
+      gap: "12px",
     });
 
     // Simple CSS Spinner
@@ -422,30 +428,39 @@
         ? THEME.primary
         : variant === "success"
         ? THEME.success
-        : "#444";
+        : "rgba(255, 255, 255, 0.1)";
 
     Object.assign(btn.style, {
       background: bg,
       color: "#fff",
-      border: "none",
-      padding: "8px 14px",
-      borderRadius: "6px",
+      border: "1px solid rgba(255, 255, 255, 0.05)",
+      padding: "8px 16px",
+      borderRadius: "8px",
       cursor: "pointer",
       display: "flex",
       alignItems: "center",
-      gap: "6px",
+      gap: "8px",
       fontSize: "13px",
-      fontWeight: "500",
-      fontFamily: "system-ui, sans-serif",
-      transition: "transform 0.1s, opacity 0.2s",
+      fontWeight: "600",
+      fontFamily: "system-ui, -apple-system, sans-serif",
+      transition: "all 0.2s cubic-bezier(0.4, 0, 0.2, 1)",
       position: "relative",
       zIndex: "2", // above timer bar
+      boxShadow: "0 2px 4px rgba(0,0,0,0.1)",
     });
 
-    btn.onmouseover = () => (btn.style.opacity = "0.9");
-    btn.onmouseout = () => (btn.style.opacity = "1");
-    btn.onmousedown = () => (btn.style.transform = "scale(0.96)");
-    btn.onmouseup = () => (btn.style.transform = "scale(1)");
+    btn.onmouseover = () => {
+      btn.style.transform = "translateY(-1px)";
+      btn.style.boxShadow = "0 4px 8px rgba(0,0,0,0.2)";
+      btn.style.filter = "brightness(1.1)";
+    };
+    btn.onmouseout = () => {
+      btn.style.transform = "translateY(0)";
+      btn.style.boxShadow = "0 2px 4px rgba(0,0,0,0.1)";
+      btn.style.filter = "brightness(1)";
+    };
+    btn.onmousedown = () => (btn.style.transform = "translateY(0) scale(0.98)");
+    btn.onmouseup = () => (btn.style.transform = "translateY(-1px)");
 
     if (iconSvg) {
       const icon = document.createElement("div");
@@ -469,7 +484,7 @@
     return btn;
   }
 
-  function showToolbar(contextLabel) {
+  function showToolbar() {
     ensureStyles();
     if (toolbar) toolbar.remove();
 
@@ -581,7 +596,7 @@
     const sep = document.createElement("div");
     sep.style.width = "1px";
     sep.style.height = "24px";
-    sep.style.background = "#555";
+    sep.style.background = "rgba(255, 255, 255, 0.1)";
     sep.style.margin = "0 4px";
     toolbar.appendChild(sep);
 
@@ -597,7 +612,7 @@
       background: THEME.primary,
       width: "100%",
       animation: "smartScreenshotTimer 10s linear forwards",
-      borderRadius: "0 0 12px 12px",
+      borderRadius: "0 0 16px 16px",
     });
 
     toolbar.appendChild(timerBar);
@@ -630,8 +645,7 @@
 
   function handleCanvasResult(canvas) {
     try {
-      const dataUrl = canvas.toDataURL("image/png");
-      currentDataUrl = dataUrl;
+      currentDataUrl = canvas.toDataURL("image/png");
       showToolbar();
     } catch (e) {
       showToast("Failed to process screenshot", "error");
@@ -648,19 +662,21 @@
 
     Object.assign(elementInfoBox.style, {
       position: "absolute",
-      padding: "4px 8px",
-      borderRadius: "4px",
+      padding: "6px 10px",
+      borderRadius: "6px",
       background: THEME.primary,
       color: "#fff",
-      fontFamily: "monospace",
-      fontSize: "11px",
+      fontFamily: "ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace",
+      fontSize: "12px",
+      fontWeight: "500",
       pointerEvents: "none",
       zIndex: String(Z_INDEX_BASE + 1),
       maxWidth: "240px",
       whiteSpace: "nowrap",
       overflow: "hidden",
       textOverflow: "ellipsis",
-      boxShadow: "0 2px 4px rgba(0,0,0,0.2)",
+      boxShadow: "0 4px 8px rgba(0,0,0,0.2)",
+      border: "1px solid rgba(255, 255, 255, 0.1)",
     });
 
     document.body.appendChild(elementInfoBox);
@@ -1177,8 +1193,7 @@
         
         // Calculate what part of this capture contains our element
         const captureViewportTop = scrollY;
-        const captureViewportBottom = scrollY + viewportHeight;
-        
+
         // Element's position relative to this capture
         const elementTopInCapture = Math.max(0, elementTop - captureViewportTop);
         const elementBottomInCapture = Math.min(viewportHeight, elementTop + elementHeight - captureViewportTop);

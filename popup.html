@@ -1,98 +1,132 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
   <head>
     <meta charset="UTF-8" />
     <title>snap-it-like-its-hot</title>
     <style>
       :root {
-        --primary: #4a90e2;
-        --bg: #2b2b2b;
-        --surface: #3c3c3c;
-        --text: #ececec;
-        --hover: #505050;
-        --danger: #ef5350;
+        --bg: #1a1b1e;
+        --surface: #25262b;
+        --surface-hover: #2c2e33;
+        --primary: #4dabf7;
+        --text-primary: #e9ecef;
+        --text-secondary: #adb5bd;
+        --border: #2c2e33;
+        --shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+        --radius: 8px;
+        --transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
       }
 
       body {
         margin: 0;
         padding: 0;
-        width: 240px;
+        width: 280px;
         background-color: var(--bg);
-        color: var(--text);
-        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
-          Oxygen, Ubuntu, Cantarell, sans-serif;
+        color: var(--text-primary);
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        -webkit-font-smoothing: antialiased;
         user-select: none;
       }
 
       header {
-        padding: 16px;
-        background-color: var(--surface);
+        padding: 20px;
+        background-color: var(--bg);
         display: flex;
         align-items: center;
-        gap: 10px;
-        border-bottom: 1px solid #444;
+        gap: 12px;
+        border-bottom: 1px solid var(--border);
+      }
+
+      header .icon {
+        width: 24px;
+        height: 24px;
+        color: var(--primary);
+        filter: drop-shadow(0 0 8px rgba(77, 171, 247, 0.3));
       }
 
       h1 {
         margin: 0;
-        font-size: 15px;
-        font-weight: 600;
-        letter-spacing: 0.5px;
+        font-size: 16px;
+        font-weight: 700;
+        letter-spacing: -0.5px;
+        background: linear-gradient(135deg, #fff 0%, #adb5bd 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
       }
 
       .menu {
-        padding: 8px;
+        padding: 12px;
         display: flex;
         flex-direction: column;
-        gap: 4px;
+        gap: 8px;
       }
 
       button {
         display: flex;
         align-items: center;
-        gap: 12px;
+        gap: 14px;
         width: 100%;
-        padding: 10px 12px;
-        background: transparent;
-        border: none;
-        border-radius: 6px;
-        color: var(--text);
-        font-size: 13px;
+        padding: 12px 16px;
+        background-color: transparent;
+        border: 1px solid transparent;
+        border-radius: var(--radius);
+        color: var(--text-secondary);
+        font-size: 14px;
+        font-weight: 500;
         cursor: pointer;
-        transition: background 0.2s;
+        transition: var(--transition);
         text-align: left;
+        position: relative;
+        overflow: hidden;
       }
 
       button:hover {
-        background-color: var(--hover);
+        background-color: var(--surface);
+        color: var(--text-primary);
+        transform: translateY(-1px);
+        box-shadow: var(--shadow);
       }
 
       button:active {
-        transform: scale(0.98);
+        transform: translateY(0) scale(0.98);
       }
 
-      .icon {
-        width: 18px;
-        height: 18px;
+      button .icon {
+        width: 20px;
+        height: 20px;
         fill: currentColor;
-        opacity: 0.8;
+        opacity: 0.7;
+        transition: var(--transition);
+      }
+
+      button:hover .icon {
+        opacity: 1;
+        color: var(--primary);
+        fill: var(--primary);
       }
 
       .separator {
         height: 1px;
-        background-color: #444;
-        margin: 4px 8px;
+        background-color: var(--border);
+        margin: 8px 0;
+        opacity: 0.5;
       }
 
-      /* Specific Colors */
-      #fullPage {
-        color: #90caf9;
-      }
-      #areaCapture {
-        color: #a5d6a7;
-      }
-      #elementCapture {
-        color: #ffcc80;
+      /* Specific Colors for hover states if needed, or keep uniform */
+      #fullPage:hover .icon { color: #74c0fc; fill: #74c0fc; }
+      #areaCapture:hover .icon { color: #69db7c; fill: #69db7c; }
+      #elementCapture:hover .icon { color: #ffd43b; fill: #ffd43b; }
+
+      .error-message {
+        padding: 16px;
+        color: #ff6b6b;
+        font-size: 13px;
+        line-height: 1.5;
+        text-align: center;
+        background: rgba(255, 107, 107, 0.1);
+        border-radius: var(--radius);
+        margin: 12px;
+        border: 1px solid rgba(255, 107, 107, 0.2);
       }
     </style>
   </head>
