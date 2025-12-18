@@ -5,70 +5,114 @@
     <title>snap-it-like-its-hot</title>
     <style>
       :root {
-        --bg: #1a1b1e;
+        --bg-primary: #0f0f14;
+        --bg-secondary: #1a1b1e;
         --surface: #25262b;
         --surface-hover: #2c2e33;
         --primary: #4dabf7;
-        --text-primary: #e9ecef;
+        --accent-green: #51cf66;
+        --accent-yellow: #ffd43b;
+        --accent-blue: #74c0fc;
+        --text-primary: #f8f9fa;
         --text-secondary: #adb5bd;
+        --text-tertiary: #868e96;
         --border: #2c2e33;
-        --shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
-        --radius: 8px;
-        --transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.3);
+        --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.4);
+        --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.5);
+        --radius: 10px;
+        --radius-sm: 6px;
+        --transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+      }
+
+      @keyframes fadeIn {
+        from {
+          opacity: 0;
+          transform: translateY(4px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      @keyframes pulse {
+        0%, 100% {
+          transform: scale(1);
+        }
+        50% {
+          transform: scale(1.05);
+        }
       }
 
       body {
         margin: 0;
         padding: 0;
-        width: 280px;
-        background-color: var(--bg);
+        width: 320px;
+        background: linear-gradient(135deg, var(--bg-primary) 0%, var(--bg-secondary) 100%);
         color: var(--text-primary);
-        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
         -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
         user-select: none;
+        animation: fadeIn 0.3s ease-out;
       }
 
       header {
-        padding: 20px;
-        background-color: var(--bg);
+        padding: 24px 20px 20px;
+        background: linear-gradient(135deg, rgba(77, 171, 247, 0.05) 0%, transparent 100%);
         display: flex;
         align-items: center;
-        gap: 12px;
+        gap: 14px;
         border-bottom: 1px solid var(--border);
+        position: relative;
+      }
+
+      header::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 2px;
+        background: linear-gradient(90deg, transparent, var(--primary), transparent);
+        opacity: 0.5;
       }
 
       header .icon {
-        width: 24px;
-        height: 24px;
+        width: 28px;
+        height: 28px;
         color: var(--primary);
-        filter: drop-shadow(0 0 8px rgba(77, 171, 247, 0.3));
+        filter: drop-shadow(0 0 12px rgba(77, 171, 247, 0.4));
+        animation: pulse 3s ease-in-out infinite;
       }
 
       h1 {
         margin: 0;
-        font-size: 16px;
+        font-size: 17px;
         font-weight: 700;
         letter-spacing: -0.5px;
-        background: linear-gradient(135deg, #fff 0%, #adb5bd 100%);
+        background: linear-gradient(135deg, var(--text-primary) 0%, var(--text-secondary) 100%);
         -webkit-background-clip: text;
         -webkit-text-fill-color: transparent;
+        background-clip: text;
       }
 
       .menu {
-        padding: 12px;
+        padding: 16px 14px 18px;
         display: flex;
         flex-direction: column;
-        gap: 8px;
+        gap: 10px;
       }
 
       button {
         display: flex;
         align-items: center;
-        gap: 14px;
+        gap: 16px;
         width: 100%;
-        padding: 12px 16px;
-        background-color: transparent;
-        border: 1px solid transparent;
+        padding: 14px 18px;
+        background: linear-gradient(135deg, rgba(255, 255, 255, 0.02) 0%, rgba(255, 255, 255, 0.01) 100%);
+        border: 1px solid rgba(255, 255, 255, 0.06);
         border-radius: var(--radius);
         color: var(--text-secondary);
         font-size: 14px;
@@ -78,55 +122,93 @@
         text-align: left;
         position: relative;
         overflow: hidden;
+        backdrop-filter: blur(10px);
+      }
+
+      button::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: -100%;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.05), transparent);
+        transition: left 0.5s ease;
+      }
+
+      button:hover::before {
+        left: 100%;
       }
 
       button:hover {
-        background-color: var(--surface);
+        background: linear-gradient(135deg, var(--surface) 0%, rgba(44, 46, 51, 0.8) 100%);
+        border-color: rgba(255, 255, 255, 0.1);
         color: var(--text-primary);
-        transform: translateY(-1px);
-        box-shadow: var(--shadow);
+        transform: translateY(-2px);
+        box-shadow: var(--shadow-md);
       }
 
       button:active {
         transform: translateY(0) scale(0.98);
+        box-shadow: var(--shadow-sm);
       }
 
       button .icon {
-        width: 20px;
-        height: 20px;
+        width: 22px;
+        height: 22px;
         fill: currentColor;
         opacity: 0.7;
         transition: var(--transition);
+        flex-shrink: 0;
       }
 
       button:hover .icon {
         opacity: 1;
-        color: var(--primary);
-        fill: var(--primary);
+        transform: scale(1.1);
       }
 
       .separator {
         height: 1px;
-        background-color: var(--border);
-        margin: 8px 0;
+        background: linear-gradient(90deg, transparent, var(--border), transparent);
+        margin: 6px 0;
         opacity: 0.5;
       }
 
-      /* Specific Colors for hover states if needed, or keep uniform */
-      #fullPage:hover .icon { color: #74c0fc; fill: #74c0fc; }
-      #areaCapture:hover .icon { color: #69db7c; fill: #69db7c; }
-      #elementCapture:hover .icon { color: #ffd43b; fill: #ffd43b; }
+      /* Specific accent colors for hover states */
+      #areaCapture:hover {
+        border-color: rgba(81, 207, 102, 0.3);
+      }
 
-      .error-message {
-        padding: 16px;
-        color: #ff6b6b;
-        font-size: 13px;
-        line-height: 1.5;
-        text-align: center;
-        background: rgba(255, 107, 107, 0.1);
-        border-radius: var(--radius);
-        margin: 12px;
-        border: 1px solid rgba(255, 107, 107, 0.2);
+      #areaCapture:hover .icon {
+        color: var(--accent-green);
+        fill: var(--accent-green);
+        filter: drop-shadow(0 0 8px rgba(81, 207, 102, 0.3));
+      }
+
+      #elementCapture:hover {
+        border-color: rgba(255, 212, 59, 0.3);
+      }
+
+      #elementCapture:hover .icon {
+        color: var(--accent-yellow);
+        fill: var(--accent-yellow);
+        filter: drop-shadow(0 0 8px rgba(255, 212, 59, 0.3));
+      }
+
+      #fullPage:hover {
+        border-color: rgba(116, 192, 252, 0.3);
+      }
+
+      #fullPage:hover .icon {
+        color: var(--accent-blue);
+        fill: var(--accent-blue);
+        filter: drop-shadow(0 0 8px rgba(116, 192, 252, 0.3));
+      }
+
+      /* Focus styles for accessibility */
+      button:focus {
+        outline: none;
+        box-shadow: 0 0 0 3px rgba(77, 171, 247, 0.2);
       }
     </style>
   </head>

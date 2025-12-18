@@ -10,7 +10,6 @@
     "scripting",
     "downloads"
   ],
-  "host_permissions": ["<all_urls>"],
   "icons": {
     "16": "icons/icon-16.png",
     "48": "icons/icon-48.png",
@@ -27,12 +26,5 @@
   },
   "background": {
     "service_worker": "background.js"
-  },
-  "content_scripts": [
-    {
-      "matches": ["<all_urls>"],
-      "js": ["contentScript.js"],
-      "run_at": "document_idle"
-    }
-  ]
+  }
 }

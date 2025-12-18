@@ -70,36 +70,73 @@
   }
 
   function findAndHideStickyElements(excludeElement = null) {
-    const stickyElements = [];
-    
-    // Find all elements with sticky or fixed positioning
-    document.querySelectorAll("*").forEach((el) => {
-      // Skip the element we want to capture
+    /** @type {Array<{ element: Element, prev: Record<string, { value: string, priority: string }> }>} */
+    const hidden = [];
+
+    // Only consider overlays that can actually affect a screenshot: fixed/sticky AND intersect viewport.
+    const all = document.body ? document.body.getElementsByTagName("*") : document.getElementsByTagName("*");
+    const vw = window.innerWidth;
+    const vh = window.innerHeight;
+
+    for (const el of all) {
+      // Skip the element we want to capture (and its subtree)
       if (excludeElement && (el === excludeElement || excludeElement.contains(el))) {
-        return;
+        continue;
       }
-      
+
+      // Never hide our own UI (toolbars/overlays), even though they are fixed-position.
+      if (el.getAttribute && el.getAttribute(UI_ATTR_NAME) === UI_ATTR_VALUE) {
+        continue;
+      }
+
+      if (!(el instanceof Element)) continue;
+
       const style = window.getComputedStyle(el);
       const position = style.position;
-      
-      if (position === "sticky" || position === "fixed") {
-        stickyElements.push({
-          element: el,
-          originalDisplay: el.style.display,
-          originalVisibility: el.style.visibility,
-        });
-        el.style.display = "none";
-      }
-    });
-    
-    return stickyElements;
+      if (position !== "sticky" && position !== "fixed") continue;
+
+      if (style.display === "none" || style.visibility === "hidden") continue;
+
+      const rect = el.getBoundingClientRect();
+      if (rect.width <= 0 || rect.height <= 0) continue;
+      if (rect.bottom <= 0 || rect.top >= vh || rect.right <= 0 || rect.left >= vw) continue;
+
+      const prev = {
+        visibility: {
+          value: el.style.getPropertyValue("visibility"),
+          priority: el.style.getPropertyPriority("visibility"),
+        },
+        opacity: {
+          value: el.style.getPropertyValue("opacity"),
+          priority: el.style.getPropertyPriority("opacity"),
+        },
+        pointerEvents: {
+          value: el.style.getPropertyValue("pointer-events"),
+          priority: el.style.getPropertyPriority("pointer-events"),
+        },
+      };
+
+      // Hide without layout reflow.
+      el.style.setProperty("visibility", "hidden", "important");
+      el.style.setProperty("opacity", "0", "important");
+      el.style.setProperty("pointer-events", "none", "important");
+
+      hidden.push({ element: el, prev });
+    }
+
+    return hidden;
   }
 
-  function restoreStickyElements(stickyElements) {
-    stickyElements.forEach(({ element, originalDisplay, originalVisibility }) => {
-      element.style.display = originalDisplay;
-      element.style.visibility = originalVisibility;
-    });
+  function restoreStickyElements(hidden) {
+    for (const { element, prev } of hidden) {
+      for (const [prop, saved] of Object.entries(prev)) {
+        if (!saved.value) {
+          element.style.removeProperty(prop);
+        } else {
+          element.style.setProperty(prop, saved.value, saved.priority);
+        }
+      }
+    }
   }
 
   function makeElementNonSticky(el) {
@@ -168,7 +205,9 @@
       gap: "8px",
     });
 
-    toast.innerHTML = `<span>${message}</span>`;
+    const span = document.createElement("span");
+    span.textContent = String(message ?? "");
+    toast.appendChild(span);
     document.body.appendChild(toast);
 
     // Animate In
@@ -304,7 +343,9 @@
     });
 
     const msg = text || "Smart Screenshot active. Press Esc to cancel.";
-    infoOverlay.innerHTML = `<span>${msg}</span>`;
+    const span = document.createElement("span");
+    span.textContent = msg;
+    infoOverlay.appendChild(span);
     document.body.appendChild(infoOverlay);
   }
 
@@ -689,7 +730,15 @@
     const id = el.id ? "#" + el.id : "";
     const size = `${Math.round(rect.width)}×${Math.round(rect.height)}`;
 
-    elementInfoBox.innerHTML = `<span style="font-weight:bold">${tagName}${id}</span> <span style="opacity:0.8">| ${size}</span>`;
+    elementInfoBox.textContent = "";
+    const strong = document.createElement("span");
+    strong.style.fontWeight = "bold";
+    strong.textContent = `${tagName}${id}`;
+    const details = document.createElement("span");
+    details.style.opacity = "0.8";
+    details.textContent = ` | ${size}`;
+    elementInfoBox.appendChild(strong);
+    elementInfoBox.appendChild(details);
 
     const top = window.scrollY + rect.top - 28;
     const left = window.scrollX + rect.left;
@@ -721,9 +770,7 @@
       return false;
 
     const rect = el.getBoundingClientRect();
-    if (rect.width < 5 || rect.height < 5) return false;
-
-    return true;
+    return rect.width >= 5 && rect.height >= 5;
   }
 
   function pickBestTarget(el) {
@@ -834,7 +881,7 @@
     // Use currentCandidate which might have been adjusted by arrow keys
     const target = currentCandidate || lastTarget;
     stopElementPicker();
-    if (target) captureElement(target);
+    if (target) captureElement(target).catch(console.error);
   }
 
   function onPickerKeyDown(e) {
@@ -853,7 +900,7 @@
       e.stopPropagation();
       const target = currentCandidate || lastTarget;
       stopElementPicker();
-      if (target) captureElement(target);
+      if (target) captureElement(target).catch(console.error);
       return;
     }
 
@@ -989,7 +1036,7 @@
     stopAreaPicker();
 
     if (rect.width < 5 || rect.height < 5) return;
-    captureArea(rect);
+    await captureArea(rect);
   }
 
   function onAreaKeyDown(e) {
@@ -1019,38 +1066,40 @@
 
   function cropElementFromScreenshot(dataUrl, rect) {
     return new Promise((resolve, reject) => {
-      const dpr = window.devicePixelRatio || 1;
-      const viewportWidthPx = Math.floor(window.innerWidth * dpr);
-      const viewportHeightPx = Math.floor(window.innerHeight * dpr);
-
-      let sx = Math.floor(rect.left * dpr);
-      let sy = Math.floor(rect.top * dpr);
-      let sw = Math.floor(rect.width * dpr);
-      let sh = Math.floor(rect.height * dpr);
-
-      if (sx < 0) {
-        sw += sx;
-        sx = 0;
-      }
-      if (sy < 0) {
-        sh += sy;
-        sy = 0;
-      }
-
-      if (sx + sw > viewportWidthPx) sw = viewportWidthPx - sx;
-      if (sy + sh > viewportHeightPx) sh = viewportHeightPx - sy;
-
-      if (sw <= 0 || sh <= 0) {
-        reject(new Error("Element is outside viewport"));
-        return;
-      }
-
       const img = new Image();
       img.onload = () => {
+        // captureVisibleTab returns a bitmap that may not equal devicePixelRatio.
+        // Compute scale from the actual capture size for accurate, crisp cropping.
+        const scaleX = img.width / Math.max(1, window.innerWidth);
+        const scaleY = img.height / Math.max(1, window.innerHeight);
+
+        let sx = Math.floor(rect.left * scaleX);
+        let sy = Math.floor(rect.top * scaleY);
+        let sw = Math.floor(rect.width * scaleX);
+        let sh = Math.floor(rect.height * scaleY);
+
+        // Clamp to image bounds
+        if (sx < 0) {
+          sw += sx;
+          sx = 0;
+        }
+        if (sy < 0) {
+          sh += sy;
+          sy = 0;
+        }
+        if (sx + sw > img.width) sw = img.width - sx;
+        if (sy + sh > img.height) sh = img.height - sy;
+
+        if (sw <= 0 || sh <= 0) {
+          reject(new Error("Element is outside viewport"));
+          return;
+        }
+
         const canvas = document.createElement("canvas");
         canvas.width = sw;
         canvas.height = sh;
         const ctx = canvas.getContext("2d");
+        ctx.imageSmoothingEnabled = false;
         const sourceW = Math.min(sw, img.width - sx);
         const sourceH = Math.min(sh, img.height - sy);
         if (sourceW > 0 && sourceH > 0) {
@@ -1072,8 +1121,11 @@
       const isElementSticky = elementStyle.position === "sticky" || elementStyle.position === "fixed";
       
       const rect = el.getBoundingClientRect();
-      if (rect.width <= 0 || rect.height <= 0)
-        throw new Error("Element has no size");
+      if (rect.width <= 0 || rect.height <= 0) {
+        showToast("Element capture failed", "error");
+        console.error(new Error("Element has no size"));
+        return;
+      }
 
       const viewportHeight = window.innerHeight;
       const elementHeight = rect.height;
@@ -1108,7 +1160,6 @@
 
   async function captureCleanShotHidingStickyElements(excludeElement = null) {
     const stickyElements = findAndHideStickyElements(excludeElement);
-    const elementPositionState = excludeElement ? makeElementNonSticky(excludeElement) : null;
     const uiElements = getUiElements();
     hideUi(uiElements);
     hideScrollbars();
@@ -1117,9 +1168,6 @@
     try {
       return await captureVisibleTabImage();
     } finally {
-      if (elementPositionState) {
-        restoreElementPositioning(elementPositionState);
-      }
       restoreStickyElements(stickyElements);
       showScrollbars();
       showUi(uiElements);
@@ -1140,7 +1188,8 @@
       // Get element's absolute position and size
       const rect = el.getBoundingClientRect();
       const elementTop = window.scrollY + rect.top;
-      const elementLeft = window.scrollX + rect.left;
+      // Avoid horizontal scrolling (can cause incorrect cropping). Keep X stable.
+      const elementLeft = originalScrollX;
       const elementWidth = rect.width;
       const elementHeight = rect.height;
       
@@ -1164,9 +1213,14 @@
       
       // Create canvas for the element
       const canvas = document.createElement("canvas");
-      canvas.width = Math.floor(elementWidth * dpr);
-      canvas.height = Math.floor(elementHeight * dpr);
+      // Determine scale from the first capture to avoid blurry output on HiDPI.
+      // We'll initialize canvas sizes after the first capture.
+      let scaleX = dpr;
+      let scaleY = dpr;
+      canvas.width = Math.floor(elementWidth * scaleX);
+      canvas.height = Math.floor(elementHeight * scaleY);
       const ctx = canvas.getContext("2d");
+      ctx.imageSmoothingEnabled = false;
       
       for (let i = 0; i < steps.length; i++) {
         const scrollY = steps[i];
@@ -1180,16 +1234,36 @@
         window.scrollTo(elementLeft, scrollY);
         await sleep(400);
         
-        // Hide UI and sticky elements again before capture
+        // Hide UI and ensure sticky/fixed overlays remain hidden before capture
         hideUi(uiElements);
-        // Re-hide sticky elements in case they got re-shown
-        stickyElements.forEach(({ element }) => {
-          element.style.display = "none";
-        });
+        for (const { element } of stickyElements) {
+          element.style.setProperty("visibility", "hidden", "important");
+          element.style.setProperty("opacity", "0", "important");
+          element.style.setProperty("pointer-events", "none", "important");
+        }
         await waitForFrame();
         
         // Capture the visible tab
         const dataUrl = await captureVisibleTabImage();
+
+        // On first frame, compute actual capture scale and resize canvas accordingly.
+        if (i === 0) {
+          const probe = await new Promise((resolve, reject) => {
+            const img = new Image();
+            img.onload = () => resolve(img);
+            img.onerror = reject;
+            img.src = dataUrl;
+          });
+          scaleX = probe.width / Math.max(1, window.innerWidth);
+          scaleY = probe.height / Math.max(1, window.innerHeight);
+          const newW = Math.floor(elementWidth * scaleX);
+          const newH = Math.floor(elementHeight * scaleY);
+          if (canvas.width !== newW || canvas.height !== newH) {
+            canvas.width = newW;
+            canvas.height = newH;
+          }
+          ctx.imageSmoothingEnabled = false;
+        }
         
         // Calculate what part of this capture contains our element
         const captureViewportTop = scrollY;
@@ -1205,13 +1279,15 @@
           await drawElementSegment(
             dataUrl,
             ctx,
-            dpr,
+            // Use the real capture scale (not assumed DPR)
+            scaleX,
+            scaleY,
             rect.left,  // Element's left position in viewport
             elementTopInCapture,  // Where element starts in this capture
             elementWidth,
             captureHeight,
             0,  // Always at left edge of element canvas
-            Math.max(0, captureViewportTop - elementTop) * dpr  // Destination Y in element canvas
+            Math.floor(Math.max(0, captureViewportTop - elementTop) * scaleY)  // Destination Y in element canvas
           );
         }
         
@@ -1239,21 +1315,32 @@
     }
   }
   
-  function drawElementSegment(dataUrl, ctx, dpr, sourceX, sourceY, sourceW, sourceH, destX, destY) {
+  function drawElementSegment(dataUrl, ctx, scaleX, scaleY, sourceX, sourceY, sourceW, sourceH, destX, destY) {
     return new Promise((resolve) => {
       const img = new Image();
       img.onload = () => {
-        const sx = Math.floor(sourceX * dpr);
-        const sy = Math.floor(sourceY * dpr);
-        const sw = Math.floor(sourceW * dpr);
-        const sh = Math.floor(sourceH * dpr);
+        const sx = Math.floor(sourceX * scaleX);
+        const sy = Math.floor(sourceY * scaleY);
+        const sw = Math.floor(sourceW * scaleX);
+        const sh = Math.floor(sourceH * scaleY);
         
         // Ensure we don't draw outside image bounds
         const actualSW = Math.min(sw, img.width - sx);
         const actualSH = Math.min(sh, img.height - sy);
         
         if (actualSW > 0 && actualSH > 0) {
-          ctx.drawImage(img, sx, sy, actualSW, actualSH, destX, destY, actualSW, actualSH);
+          ctx.imageSmoothingEnabled = false;
+          ctx.drawImage(
+            img,
+            sx,
+            sy,
+            actualSW,
+            actualSH,
+            Math.floor(destX),
+            Math.floor(destY),
+            actualSW,
+            actualSH
+          );
         }
         resolve();
       };
@@ -1264,14 +1351,14 @@
 
   // ---------- FULL-PAGE CAPTURE ----------
 
-  function drawSegmentOnCanvas(dataUrl, ctx, dpr, scrollY, canvasHeight) {
-    return new Promise((resolve, reject) => {
+  function drawSegmentOnCanvas(dataUrl, ctx, scaleY, scrollY, canvasHeight) {
+    return new Promise((resolve) => {
       const img = new Image();
       img.onload = () => {
         const sw = img.width;
         let sh = img.height;
         const destX = 0;
-        const destY = Math.floor(scrollY * dpr);
+        const destY = Math.floor(scrollY * scaleY);
 
         if (destY >= canvasHeight) {
           resolve();
@@ -1279,7 +1366,10 @@
         }
         if (destY + sh > canvasHeight) sh = canvasHeight - destY;
 
-        if (sh > 0) ctx.drawImage(img, 0, 0, sw, sh, destX, destY, sw, sh);
+        if (sh > 0) {
+          ctx.imageSmoothingEnabled = false;
+          ctx.drawImage(img, 0, 0, sw, sh, destX, destY, sw, sh);
+        }
         resolve();
       };
       img.onerror = () => {
@@ -1296,13 +1386,16 @@
     hideScrollbars();
     await waitForFrame();
 
+    // Hide sticky/fixed overlays (headers/sidebars) so they don't repeat in the stitched output.
+    // (Excluded: extension UI elements)
+    const hiddenStickies = findAndHideStickyElements(null);
+
     try {
       const scrollElem =
         document.scrollingElement || document.documentElement || document.body;
       const totalHeight = scrollElem.scrollHeight;
       const viewportHeight = window.innerHeight;
       const viewportWidth = window.innerWidth;
-      const dpr = window.devicePixelRatio || 1;
 
       const overlap = 80;
       const steps = [];
@@ -1318,10 +1411,14 @@
         steps.push(totalHeight - viewportHeight);
       }
 
-      const canvas = document.createElement("canvas");
-      canvas.width = Math.floor(viewportWidth * dpr);
-      canvas.height = Math.floor(totalHeight * dpr);
-      const ctx = canvas.getContext("2d");
+      // Determine scale from the actual captured bitmap (more reliable than devicePixelRatio)
+      let scaleX = window.devicePixelRatio || 1;
+      let scaleY = scaleX;
+
+      /** @type {HTMLCanvasElement|null} */
+      let canvas = null;
+      /** @type {CanvasRenderingContext2D|null} */
+      let ctx = null;
       const originalY = window.scrollY;
 
       for (let i = 0; i < steps.length; i++) {
@@ -1340,7 +1437,26 @@
         await waitForFrame();
 
         const dataUrl = await captureVisibleTabImage();
-        await drawSegmentOnCanvas(dataUrl, ctx, dpr, scrollY, canvas.height);
+
+        if (!canvas || !ctx) {
+          // Probe capture size
+          const probe = await new Promise((resolve, reject) => {
+            const img = new Image();
+            img.onload = () => resolve(img);
+            img.onerror = reject;
+            img.src = dataUrl;
+          });
+          scaleX = probe.width / Math.max(1, viewportWidth);
+          scaleY = probe.height / Math.max(1, viewportHeight);
+
+          canvas = document.createElement("canvas");
+          canvas.width = Math.floor(viewportWidth * scaleX);
+          canvas.height = Math.floor(totalHeight * scaleY);
+          ctx = canvas.getContext("2d");
+          ctx.imageSmoothingEnabled = false;
+        }
+
+        await drawSegmentOnCanvas(dataUrl, ctx, scaleY, scrollY, canvas.height);
         
         // Additional delay between captures to respect rate limits
         await sleep(250);
@@ -1349,12 +1465,17 @@
       window.scrollTo(0, originalY);
 
       showUi(uiElements);
-      handleCanvasResult(canvas);
+      if (canvas) {
+        handleCanvasResult(canvas);
+      } else {
+        throw new Error("Failed to initialize capture canvas");
+      }
     } catch (err) {
       showUi(uiElements);
       showToast("Full-page capture failed", "error");
       console.error(err);
     } finally {
+      restoreStickyElements(hiddenStickies);
       showScrollbars();
       hideLoadingOverlay();
     }
@@ -1362,7 +1483,14 @@
 
   // ---------- MESSAGE HANDLER ----------
 
+  /**
+   * @suppress {deprecated} addListener is the correct API for content scripts
+   */
   chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+    if (message && message.type === "PING") {
+      sendResponse({ ok: true });
+      return;
+    }
     if (message.type === "startElementCapture") {
       startElementPicker();
       sendResponse({ status: "started" });
@@ -1370,7 +1498,7 @@
       startAreaPicker();
       sendResponse({ status: "started" });
     } else if (message.type === "captureFullPage") {
-      captureFullPage();
+      void captureFullPage().catch(console.error);
       sendResponse({ status: "started" });
     }
   });
